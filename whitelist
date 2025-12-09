@@ -169,5 +169,7 @@ geo.prod.do.dsp.mp.microsoft.com
 tudnivalok.eu
 kvizportal.hu
 *.avast.com
+@@||avast.com^
+@@*.avast.com
 *.microsoft.com
 *.google.com
