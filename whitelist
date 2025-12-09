@@ -21,6 +21,9 @@ facts.hu
 keresztlabda.hu
 erdekesmagazin.hu
 nyugdijasok.hu
+github.com
+raw.githubusercontent.com
+githubusercontent.com
 api.onedrive.com
 login.live.com
 tsfe.trafficshaping.dsp.mp.microsoft.com
@@ -121,6 +124,7 @@ settings-win.data.microsoft.com
 s0.2mdn.net
 script.hotjar.com
 ecs.office.com
+officeclient.microsoft.com
 n.ads7-adnow.com
 f.c2r.ts.cdn.office.net
 blikkruzs.blikk.hu
@@ -147,3 +151,11 @@ google-analytics.com
 v1.pinimg.com
 onetag-sys.com
 cl.imghosts.com
+my.microsoftpersonalcontent.com
+mobile.events.data.microsoft.com
+edge-chat.facebook.com
+web-chat-e2ee.facebook.com
+www.googleapis.com
+cloudflarej-dns.com
+dns.google
+m.google.com
