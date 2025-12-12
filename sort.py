@@ -2,7 +2,7 @@ import subprocess
 
 queryres = subprocess.run(
     """
-select
+"select
   max(datetime(timestamp, 'unixepoch', 'localtime')),
   domain
 from queries 
@@ -12,7 +12,7 @@ where
   datetime(timestamp, 'unixepoch', 'localtime') > datetime('now', '-3 day')
 group by domain
 order by count(id) desc
-limit 80
+localtimeit 80"
 """,
     # 'sudo sqlite3 /etc/pihole/pihole-FTL.db "select distinct domain from queries order by timestamp desc limit 32"',
     shell=True,
