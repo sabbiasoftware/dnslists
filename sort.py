@@ -11,7 +11,7 @@ for domain in domains:
         "sudo pihole -q {}".format(domain), shell=True, capture_output=True
     )
     checkresout = checkres.stdout.decode("utf-8")
-    is_white = checkresout.find("whitelist")
-    is_black = checkresout.find("blacklist")
+    is_white = checkresout.find("whitelist") != -1
+    is_black = checkresout.find("blacklist") != -1
 
-    print("{}{} {}", "W" if is_white else " ", "B" if is_black else " ", domain)
+    print("{}{} {}".format("W" if is_white else " ", "B" if is_black else " ", domain))
