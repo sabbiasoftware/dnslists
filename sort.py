@@ -26,6 +26,11 @@ for domain in domains:
     checkres = subprocess.run(
         "sudo pihole -q {}".format(domain), shell=True, capture_output=True
     )
+
+    if checkres.returncode != 0:
+        print("Error when attempting to check domain {}".format(domain))
+        exit(1)
+
     checkresout = checkres.stdout.decode("utf-8")
     is_white = checkresout.find("whitelist") != -1
     is_black = checkresout.find("blacklist") != -1
