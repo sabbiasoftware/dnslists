@@ -3,7 +3,6 @@ import subprocess
 queryres = subprocess.run(
     "sudo sqlite3 /etc/pihole/pihole-FTL.db "
     '"select '
-    "  max(datetime(timestamp, 'unixepoch', 'localtime')), "
     "  domain "
     "from queries "
     "where "
