@@ -7,4 +7,11 @@ queryres = subprocess.run(
 )
 domains = queryres.stdout.decode("utf-8").split("\n")
 for domain in domains:
-    print(domain)
+    checkres = subprocess.run(
+        "sudo pihole -q {}".format(domain), shell=True, capture_output=True
+    )
+    checkresout = checkres.stdout.decode("utf-8")
+    is_white = checkresout.find("whitelist")
+    is_black = checkresout.find("blacklist")
+
+    print("{}{} {}", "W" if is_white else " ", "B" if is_black else " ", domain)
