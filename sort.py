@@ -12,7 +12,7 @@ queryres = subprocess.run(
     "  datetime(timestamp, 'unixepoch', 'localtime') > datetime('now', '-3 day') "
     "group by domain "
     "order by count(id) desc "
-    'localtimeit 80"',
+    'limit 80"',
     shell=True,
     capture_output=True,
 )
