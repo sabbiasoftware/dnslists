@@ -22,17 +22,29 @@ if queryres.returncode != 0:
 
 domains = queryres.stdout.decode("utf-8").split("\n")
 print("Found {} domains".format(len(domains)))
+
+whitelist = []
+with open("whitelist", "r") as f:
+    whitelist = f.readlines()
+
+blacklist = []
+with open("blacklist", "r") as f:
+    blacklist = f.readlines()
+
 for domain in domains:
-    checkres = subprocess.run(
-        "sudo pihole -q {}".format(domain), shell=True, capture_output=True
-    )
+    # checkres = subprocess.run(
+    #    "sudo pihole -q {}".format(domain), shell=True, capture_output=True
+    # )
 
-    if checkres.returncode != 0:
-        print("Error when attempting to check domain {}".format(domain))
-        exit(1)
+    # if checkres.returncode != 0:
+    #    print("Error when attempting to check domain '{}'".format(domain))
+    #    exit(1)
 
-    checkresout = checkres.stdout.decode("utf-8")
-    is_white = checkresout.find("whitelist") != -1
-    is_black = checkresout.find("blacklist") != -1
+    # checkresout = checkres.stdout.decode("utf-8")
+    # is_white = checkresout.find("whitelist") != -1
+    # is_black = checkresout.find("blacklist") != -1
+
+    is_white = (domain in whitelist) or ("@@||{}^".format(domain) in whitelist)
+    is_black = (domain in blacklist) or ("@@||{}^".format(domain) in blacklist)
 
     print("{}{} {}".format("W" if is_white else " ", "B" if is_black else " ", domain))
