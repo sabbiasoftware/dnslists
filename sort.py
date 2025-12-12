@@ -21,6 +21,7 @@ if queryres.returncode != 0:
     exit(1)
 
 domains = queryres.stdout.decode("utf-8").split("\n")
+print("Found {} domains".format(len(domains)))
 for domain in domains:
     checkres = subprocess.run(
         "sudo pihole -q {}".format(domain), shell=True, capture_output=True
