@@ -1,14 +1,25 @@
 import subprocess
 
+
+def is_match(domain, list):
+    if domain in list:
+        return True
+
+    for i in range(1, len(domain)):
+        if "@@||{}^".format(domain[i:]) in list:
+            return True
+    return False
+
+
 queryres = subprocess.run(
-    "sudo sqlite3 /etc/pihole/pihole-FTL.db "
+    "sqlite3 pihole-FTL.db "
     '"select '
     "  domain "
     "from queries "
     "where "
     "  (client='192.168.1.103' or client='192.168.1.101') and "
     "  status in (1, 4, 5, 6, 7, 8, 9, 10, 11, 15, 16, 18) and "
-    "  datetime(timestamp, 'unixepoch', 'localtime') > datetime('now', '-3 day') "
+    "  datetime(timestamp, 'unixepoch', 'localtime') > datetime('now', '-1 day') "
     "group by domain "
     "order by count(id) desc "
     'limit 80"',
@@ -25,11 +36,11 @@ print("Found {} domains".format(len(domains)))
 
 whitelist = []
 with open("whitelist", "r") as f:
-    whitelist = f.readlines()
+    whitelist = f.read().splitlines()
 
 blacklist = []
 with open("blacklist", "r") as f:
-    blacklist = f.readlines()
+    blacklist = f.read().splitlines()
 
 for domain in domains:
     # checkres = subprocess.run(
@@ -44,7 +55,7 @@ for domain in domains:
     # is_white = checkresout.find("whitelist") != -1
     # is_black = checkresout.find("blacklist") != -1
 
-    is_white = (domain in whitelist) or ("@@||{}^".format(domain) in whitelist)
-    is_black = (domain in blacklist) or ("@@||{}^".format(domain) in blacklist)
+    is_white = is_match(domain, whitelist)
+    is_black = is_match(domain, blacklist)
 
     print("{}{} {}".format("W" if is_white else " ", "B" if is_black else " ", domain))
