@@ -1,61 +1,131 @@
 import subprocess
+import curses
 
 
 def is_match(domain, list):
     if domain in list:
         return True
 
-    for i in range(1, len(domain)):
+    for i in range(0, len(domain)):
         if "@@||{}^".format(domain[i:]) in list:
             return True
     return False
 
 
-queryres = subprocess.run(
-    "sqlite3 pihole-FTL.db "
-    '"select '
-    "  domain "
-    "from queries "
-    "where "
-    "  (client='192.168.1.103' or client='192.168.1.101') and "
-    "  status in (1, 4, 5, 6, 7, 8, 9, 10, 11, 15, 16, 18) and "
-    "  datetime(timestamp, 'unixepoch', 'localtime') > datetime('now', '-1 day') "
-    "group by domain "
-    "order by count(id) desc "
-    'limit 80"',
-    shell=True,
-    capture_output=True,
-)
-if queryres.returncode != 0:
-    print("Error when attempting to run query:")
-    print(queryres.stderr.decode("utf-8"))
-    exit(1)
+def readList(listfilename):
+    list = []
+    with open(listfilename, "r") as f:
+        list = f.read().splitlines()
+    return list
 
-domains = queryres.stdout.decode("utf-8").split("\n")
-print("Found {} domains".format(len(domains)))
 
-whitelist = []
-with open("whitelist", "r") as f:
-    whitelist = f.read().splitlines()
+def writeList(listfilename, list):
+    with open(listfilename, "w") as f:
+        f.write("\n".join(list) + "\n")
 
-blacklist = []
-with open("blacklist", "r") as f:
-    blacklist = f.read().splitlines()
 
-for domain in domains:
-    # checkres = subprocess.run(
-    #    "sudo pihole -q {}".format(domain), shell=True, capture_output=True
-    # )
+def addToList(domain, listfilename):
+    with open(listfilename, "a+") as f:
+        f.seek(0, 2)
+        trailingNewLine = f.read() == "\n"
+        f.seek(0, 2)
+        if not trailingNewLine:
+            f.write("\n")
+        f.write(domain)
+        f.write("\n")
 
-    # if checkres.returncode != 0:
-    #    print("Error when attempting to check domain '{}'".format(domain))
-    #    exit(1)
 
-    # checkresout = checkres.stdout.decode("utf-8")
-    # is_white = checkresout.find("whitelist") != -1
-    # is_black = checkresout.find("blacklist") != -1
+def readDomains():
+    queryres = subprocess.run(
+        "sqlite3 pihole-FTL.db "
+        '"select '
+        "  domain "
+        "from queries "
+        "where "
+        "  (client='192.168.1.103' or client='192.168.1.101') and "
+        "  status in (1, 4, 5, 6, 7, 8, 9, 10, 11, 15, 16, 18) and "
+        "  datetime(timestamp, 'unixepoch', 'localtime') > datetime('now', '-1 day') "
+        "group by domain "
+        "order by count(id) desc "
+        'limit 80"',
+        shell=True,
+        capture_output=True,
+    )
+    if queryres.returncode != 0:
+        print("Error when attempting to run query:")
+        print(queryres.stderr.decode("utf-8"))
+        return []
+    else:
+        return queryres.stdout.decode("utf-8").split("\n")
 
-    is_white = is_match(domain, whitelist)
-    is_black = is_match(domain, blacklist)
 
-    print("{}{} {}".format("W" if is_white else " ", "B" if is_black else " ", domain))
+def main(stdscr):
+    curses.curs_set(False)
+    whitelist = readList("whitelist")
+    blacklist = readList("blacklist")
+    domains = list(
+        filter(
+            lambda d: not is_match(d, whitelist) and not is_match(d, blacklist),
+            readDomains(),
+        )
+    )
+
+    di = 0
+    while True:
+        # "sudo pihole -q {}".format(domain), shell=True, capture_output=True
+        domain = domains[di]
+
+        is_white = is_match(domain, whitelist)
+        is_black = is_match(domain, blacklist)
+        is_listed = is_white or is_black
+
+        i = 0
+        while True:
+            stdscr.addstr(
+                "{} / {}   {}{}   {} [{}]".format(
+                    di + 1,
+                    len(domains),
+                    "W" if is_white else "_",
+                    "B" if is_black else "_",
+                    domain,
+                    domain[i:],
+                )
+            )
+            stdscr.addstr("\n[q] quit   [s] save   [jk] prev/next")
+            stdscr.addstr(
+                "   [hl] slice   [b] black   [w] white   [B] black-ABP   [W] white-ABP"
+                if not is_listed
+                else "                                                                     "
+            )
+            stdscr.move(0, 0)
+            stdscr.refresh()
+            c = stdscr.getkey()
+            if c == "q":
+                exit(0)
+            elif c == "s":
+                writeList("whitelist", whitelist)
+                writeList("blacklist", blacklist)
+            elif c == "j":
+                di = (di + 1) % len(domains)
+                break
+            elif c == "k":
+                di = (di - 1) % len(domains)
+                break
+            elif not is_listed:
+                if c in "bwBW":
+                    domainToAdd = (
+                        domain[i:] if c in "bw" else "@@||{}^".format(domain[i:])
+                    )
+                    listToAdd = whitelist if c in "wW" else blacklist
+                    listToAdd.append(domainToAdd)
+                    di = (di + 1) % len(domains)
+                    break
+                elif c == "h":
+                    i = max(0, i - 1)
+                elif c == "l":
+                    i = min(i + 1, len(domain))
+
+        # print("{}{} {}".format("W" if is_white else " ", "B" if is_black else " ", domain))
+
+
+curses.wrapper(main)
