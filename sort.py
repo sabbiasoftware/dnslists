@@ -61,18 +61,22 @@ def readDomains():
         needExit(1, "Could not find database")
         return None
 
+    select = """
+        select
+          domain
+        from queries
+        where
+          (client='192.168.1.103' or client='192.168.1.101') and
+          status in (1, 4, 5, 6, 7, 8, 9, 10, 11, 15, 16, 18) and
+          datetime(timestamp, 'unixepoch', 'localtime') > datetime('now', '-7 day')
+        group by domain
+        order by count(id) desc
+    """
+
     queryres = subprocess.run(
-        "{}sqlite3 {} "
-        '"select '
-        "  domain "
-        "from queries "
-        "where "
-        "  (client='192.168.1.103' or client='192.168.1.101') and "
-        "  status in (1, 4, 5, 6, 7, 8, 9, 10, 11, 15, 16, 18) and "
-        "  datetime(timestamp, 'unixepoch', 'localtime') > datetime('now', '-3 day') "
-        "group by domain "
-        "order by count(id) desc "
-        'limit 80"'.format("sudo " if not os.access(dbfn, os.R_OK) else "", dbfn),
+        '{}sqlite3 {} "{}"'.format(
+            "sudo " if not os.access(dbfn, os.R_OK) else "", dbfn, select
+        ),
         shell=True,
         capture_output=True,
     )
@@ -98,6 +102,11 @@ def main(stdscr):
     global exitNeeded
 
     curses.curs_set(False)
+    curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK)
+    curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)
+    curses.init_pair(3, curses.COLOR_GREEN, curses.COLOR_BLACK)
+    curses.init_pair(4, curses.COLOR_BLUE, curses.COLOR_BLACK)
+
     whitelist = readList("whitelist")
     blacklist = readList("blacklist")
     domains = readDomains()
@@ -142,6 +151,11 @@ def main(stdscr):
                     domain,
                     domain[i:],
                 ),
+                curses.color_pair(
+                    2
+                    if is_black and not is_white
+                    else (3 if is_white and not is_black else 4)
+                ),
             )
             stdscr.addstr(
                 1, 0, "[q] quit   [s] save   [jk] prev/next   [hl] slice   [c] check"
@@ -162,6 +176,7 @@ def main(stdscr):
             elif c == "s":
                 writeList("whitelist", whitelist)
                 writeList("blacklist", blacklist)
+                info = "Lists saved"
             elif c == "j":
                 di = (di + 1) % len(domains)
                 info = ""
