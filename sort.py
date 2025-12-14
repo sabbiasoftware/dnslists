@@ -1,5 +1,19 @@
+import os
+import sys
 import subprocess
 import curses
+
+exitNeeded = False
+exitCode = 0
+exitMessage = ""
+
+
+def needExit(code, message):
+    global exitNeeded, exitCode, exitMessage
+
+    exitNeeded = True
+    exitCode = code
+    exitMessage = message
 
 
 def is_match(domain, list):
@@ -36,8 +50,19 @@ def addToList(domain, listfilename):
 
 
 def readDomains():
+    dbfns = ["pihole-FTL.db", "/etc/pihole/pihole-FTL.db"]
+    dbfn = None
+    for fn in dbfns:
+        if os.path.isfile(fn):
+            dbfn = fn
+            break
+
+    if dbfn is None:
+        needExit(1, "Could not find database")
+        return None
+
     queryres = subprocess.run(
-        "sqlite3 pihole-FTL.db "
+        "sqlite3 {} "
         '"select '
         "  domain "
         "from queries "
@@ -47,28 +72,42 @@ def readDomains():
         "  datetime(timestamp, 'unixepoch', 'localtime') > datetime('now', '-1 day') "
         "group by domain "
         "order by count(id) desc "
-        'limit 80"',
+        'limit 80"'.format(dbfn),
         shell=True,
         capture_output=True,
     )
     if queryres.returncode != 0:
-        print("Error when attempting to run query:")
-        print(queryres.stderr.decode("utf-8"))
-        return []
+        needExit(
+            1, "Error when attempting to run query:\n" + queryres.stderr.decode("utf-8")
+        )
+        return None
     else:
         return queryres.stdout.decode("utf-8").split("\n")
 
 
 def main(stdscr):
+    global exitNeeded
+
     curses.curs_set(False)
     whitelist = readList("whitelist")
     blacklist = readList("blacklist")
+    domains = readDomains()
+
+    if domains is None or exitNeeded:
+        return
+
     domains = list(
         filter(
-            lambda d: not is_match(d, whitelist) and not is_match(d, blacklist),
-            readDomains(),
+            lambda d: (d != "")
+            and not is_match(d, whitelist)
+            and not is_match(d, blacklist),
+            domains,
         )
     )
+
+    if len(domains) == 0:
+        needExit(0, "No domains to sort")
+        return
 
     di = 0
     while True:
@@ -129,3 +168,6 @@ def main(stdscr):
 
 
 curses.wrapper(main)
+if exitMessage != "":
+    print(exitMessage)
+sys.exit(exitCode)
