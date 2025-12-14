@@ -62,17 +62,17 @@ def readDomains():
         return None
 
     queryres = subprocess.run(
-        "sudo sqlite3 {} "
+        "{}sqlite3 {} "
         '"select '
         "  domain "
         "from queries "
         "where "
         "  (client='192.168.1.103' or client='192.168.1.101') and "
         "  status in (1, 4, 5, 6, 7, 8, 9, 10, 11, 15, 16, 18) and "
-        "  datetime(timestamp, 'unixepoch', 'localtime') > datetime('now', '-1 day') "
+        "  datetime(timestamp, 'unixepoch', 'localtime') > datetime('now', '-3 day') "
         "group by domain "
         "order by count(id) desc "
-        'limit 80"'.format(dbfn),
+        'limit 80"'.format("sudo " if not os.access(dbfn, os.R_OK) else "", dbfn),
         shell=True,
         capture_output=True,
     )
@@ -83,6 +83,15 @@ def readDomains():
         return None
     else:
         return queryres.stdout.decode("utf-8").split("\n")
+
+
+def checkDomain(domain):
+    cmd = "rg -m 4 {} lists".format(domain)
+    checkres = subprocess.run(cmd, shell=True, capture_output=True)
+    if checkres.returncode != 0:
+        return cmd + "\n" + checkres.stderr.decode("utf-8")
+    else:
+        return cmd + "\n" + checkres.stdout.decode("utf-8")
 
 
 def main(stdscr):
@@ -119,8 +128,12 @@ def main(stdscr):
         is_listed = is_white or is_black
 
         i = 0
+        info = ""
         while True:
+            stdscr.clear()
             stdscr.addstr(
+                0,
+                0,
                 "{} / {}   {}{}   {} [{}]".format(
                     di + 1,
                     len(domains),
@@ -128,17 +141,22 @@ def main(stdscr):
                     "B" if is_black else "_",
                     domain,
                     domain[i:],
-                )
+                ),
             )
-            stdscr.addstr("\n[q] quit   [s] save   [jk] prev/next")
             stdscr.addstr(
-                "   [hl] slice   [b] black   [w] white   [B] black-ABP   [W] white-ABP"
-                if not is_listed
-                else "                                                                     "
+                1, 0, "[q] quit   [s] save   [jk] prev/next   [hl] slice   [c] check"
             )
-            stdscr.move(0, 0)
+            if not is_listed:
+                stdscr.addstr(
+                    2,
+                    0,
+                    "[b] black   [w] white   [B] black-ABP   [W] white-ABP",
+                )
+            stdscr.addstr(4, 0, info)
             stdscr.refresh()
+
             c = stdscr.getkey()
+
             if c == "q":
                 exit(0)
             elif c == "s":
@@ -146,10 +164,19 @@ def main(stdscr):
                 writeList("blacklist", blacklist)
             elif c == "j":
                 di = (di + 1) % len(domains)
+                info = ""
                 break
             elif c == "k":
                 di = (di - 1) % len(domains)
+                info = ""
                 break
+            elif c == "h":
+                i = max(0, i - 1)
+            elif c == "l":
+                i = min(i + 1, len(domain))
+            elif c == "c":
+                checkres = checkDomain(domain[i:])
+                info = checkres
             elif not is_listed:
                 if c in "bwBW":
                     domainToAdd = (
@@ -159,10 +186,6 @@ def main(stdscr):
                     listToAdd.append(domainToAdd)
                     di = (di + 1) % len(domains)
                     break
-                elif c == "h":
-                    i = max(0, i - 1)
-                elif c == "l":
-                    i = min(i + 1, len(domain))
 
         # print("{}{} {}".format("W" if is_white else " ", "B" if is_black else " ", domain))
 
