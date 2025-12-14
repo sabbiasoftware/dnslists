@@ -62,7 +62,7 @@ def readDomains():
         return None
 
     queryres = subprocess.run(
-        "sqlite3 {} "
+        "sudo sqlite3 {} "
         '"select '
         "  domain "
         "from queries "
