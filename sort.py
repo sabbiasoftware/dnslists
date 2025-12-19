@@ -66,7 +66,7 @@ def readDomains():
           domain
         from queries
         where
-          (client='192.168.1.103' or client='192.168.1.101') and
+          (client='192.168.1.103' or client='192.168.1.101' or client='192.168.1.102') and
           status in (1, 4, 5, 6, 7, 8, 9, 10, 11, 15, 16, 18) and
           datetime(timestamp, 'unixepoch', 'localtime') > datetime('now', '-7 day')
         group by domain
