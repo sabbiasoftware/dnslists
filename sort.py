@@ -49,7 +49,7 @@ def addToList(domain, listfilename):
         f.write("\n")
 
 
-def readDomains():
+def runQuery(select):
     dbfns = ["pihole-FTL.db", "/etc/pihole/pihole-FTL.db"]
     dbfn = None
     for fn in dbfns:
@@ -60,19 +60,6 @@ def readDomains():
     if dbfn is None:
         needExit(1, "Could not find database")
         return None
-
-    select = """
-        select
-          domain
-        from queries
-        where
-          (client='192.168.1.103' or client='192.168.1.101' or client='192.168.1.102') and
-          status in (1, 4, 5, 6, 7, 8, 9, 10, 11, 15, 16, 18) and
-          datetime(timestamp, 'unixepoch', 'localtime') > datetime('now', '-7 day') and
-          domain like '%.hu'
-        group by domain
-        order by count(id) desc
-    """
 
     queryres = subprocess.run(
         '{}sqlite3 {} "{}"'.format(
@@ -90,23 +77,55 @@ def readDomains():
         return queryres.stdout.decode("utf-8").split("\n")
 
 
+def readDomains():
+    select = """
+        select
+          domain
+        from queries
+        where
+          (client='192.168.1.103' or client='192.168.1.101' or client='192.168.1.102') and
+          status in (1, 4, 5, 6, 7, 8, 9, 10, 11, 15, 16, 18) and
+          datetime(timestamp, 'unixepoch', 'localtime') > datetime('now', '-28 day') and
+          domain like '%.hu'
+        group by domain
+        order by count(id)
+    """
+
+    domains = runQuery(select)
+    if domains is None:
+        return
+
+    select = """
+        select
+          domain
+        from queries
+        where
+          (client='192.168.1.103' or client='192.168.1.101' or client='192.168.1.102') and
+          status in (1, 4, 5, 6, 7, 8, 9, 10, 11, 15, 16, 18) and
+          datetime(timestamp, 'unixepoch', 'localtime') > datetime('now', '-28 day') and
+          domain not like '%.hu'
+        group by domain
+        order by count(id)
+    """
+
+    domains2 = runQuery(select)
+    if domains2 is None:
+        return
+
+    return domains + domains2
+
+
 def checkDomain(domain):
     cmd = "rg -m 4 {} lists".format(domain)
     checkres = subprocess.run(cmd, shell=True, capture_output=True)
     if checkres.returncode != 0:
-        return cmd + "\n" + checkres.stderr.decode("utf-8")
+        return ""  # checkres.stderr.decode("utf-8")
     else:
-        return cmd + "\n" + checkres.stdout.decode("utf-8")
+        return checkres.stdout.decode("utf-8")
 
 
 def main(stdscr):
     global exitNeeded
-
-    curses.curs_set(False)
-    curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK)
-    curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)
-    curses.init_pair(3, curses.COLOR_GREEN, curses.COLOR_BLACK)
-    curses.init_pair(4, curses.COLOR_BLUE, curses.COLOR_BLACK)
 
     whitelist = readList("whitelist")
     blacklist = readList("blacklist")
@@ -127,6 +146,12 @@ def main(stdscr):
     if len(domains) == 0:
         needExit(0, "No domains to sort")
         return
+
+    curses.curs_set(False)
+    curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK)
+    curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)
+    curses.init_pair(3, curses.COLOR_GREEN, curses.COLOR_BLACK)
+    curses.init_pair(4, curses.COLOR_BLUE, curses.COLOR_BLACK)
 
     di = 0
     while True:
@@ -159,7 +184,9 @@ def main(stdscr):
                 ),
             )
             stdscr.addstr(
-                1, 0, "[q] quit   [s] save   [jk] prev/next   [hl] slice   [c] check"
+                1,
+                0,
+                "[q] quit   [s] save   [jk] prev/next   [hl] slice   [c] check   [C] check all",
             )
             if not is_listed:
                 stdscr.addstr(
@@ -193,6 +220,14 @@ def main(stdscr):
             elif c == "c":
                 checkres = checkDomain(domain[i:])
                 info = checkres
+            elif c == "C":
+                for d in domains:
+                    stdscr.addstr(4, 0, "Checking: " + d)
+                    stdscr.clrtoeol()
+                    stdscr.refresh()
+                    if checkDomain(d) != "":
+                        blacklist.append(d)
+                break
             elif not is_listed:
                 if c in "bwBW":
                     domainToAdd = (
