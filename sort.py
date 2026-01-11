@@ -38,17 +38,6 @@ def writeList(listfilename, list):
         f.write("\n".join(list) + "\n")
 
 
-def addToList(domain, listfilename):
-    with open(listfilename, "a+") as f:
-        f.seek(0, 2)
-        trailingNewLine = f.read() == "\n"
-        f.seek(0, 2)
-        if not trailingNewLine:
-            f.write("\n")
-        f.write(domain)
-        f.write("\n")
-
-
 def runQuery(select):
     dbfns = ["pihole-FTL.db", "/etc/pihole/pihole-FTL.db"]
     dbfn = None
@@ -230,12 +219,15 @@ def main(stdscr):
                 break
             elif not is_listed:
                 if c in "bwBW":
-                    domainToAdd = (
+                    domainToToggle = (
                         domain[i:] if c in "bw" else "@@||{}^".format(domain[i:])
                     )
-                    listToAdd = whitelist if c in "wW" else blacklist
-                    listToAdd.append(domainToAdd)
-                    di = (di + 1) % len(domains)
+                    listToToggle = whitelist if c in "wW" else blacklist
+                    if domainToToggle in listToToggle:
+                        listToToggle.remove(domainToToggle)
+                    else:
+                        listToToggle.append(domainToToggle)
+                    # di = (di + 1) % len(domains)
                     break
 
         # print("{}{} {}".format("W" if is_white else " ", "B" if is_black else " ", domain))
