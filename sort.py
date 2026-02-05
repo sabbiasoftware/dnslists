@@ -105,12 +105,12 @@ def readDomains():
 
 
 def checkDomain(domain):
-    blackEnd = [".shop", ".site"]
+    blackEnd = [".shop", ".site", ".online", ".top", ".website"]
     for be in blackEnd:
         if domain.endswith(be):
             return "Black end: " + be
 
-    cmd = "rg -m 4 {} lists".format(domain)
+    cmd = 'rg -m 4 " {}\\$" lists'.format(domain)
     checkres = subprocess.run(cmd, shell=True, capture_output=True)
     if checkres.returncode != 0:
         return ""  # checkres.stderr.decode("utf-8")
