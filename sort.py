@@ -222,18 +222,17 @@ def main(stdscr):
                     if checkDomain(d) != "":
                         blacklist.append(d)
                 break
-            elif not is_listed:
-                if c in "bwBW":
-                    domainToToggle = (
-                        domain[i:] if c in "bw" else "@@||{}^".format(domain[i:])
-                    )
-                    listToToggle = whitelist if c in "wW" else blacklist
-                    if domainToToggle in listToToggle:
-                        listToToggle.remove(domainToToggle)
-                    else:
-                        listToToggle.append(domainToToggle)
-                    # di = (di + 1) % len(domains)
-                    break
+            if c in "bwBW":
+                domainToToggle = (
+                    domain[i:] if c in "bw" else "@@||{}^".format(domain[i:])
+                )
+                listToToggle = whitelist if c in "wW" else blacklist
+                if domainToToggle in listToToggle:
+                    listToToggle.remove(domainToToggle)
+                else:
+                    listToToggle.append(domainToToggle)
+                # di = (di + 1) % len(domains)
+                break
 
         # print("{}{} {}".format("W" if is_white else " ", "B" if is_black else " ", domain))
 
