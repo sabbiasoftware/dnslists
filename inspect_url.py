@@ -3,6 +3,7 @@ import hashlib
 import os
 import re
 import time
+import unicodedata
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium_stealth import stealth
@@ -39,6 +40,7 @@ def get_page_content(url: str, debug: bool = False) -> str:
         options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--lang=hu")
     options.add_experimental_option("excludeSwitches", ["enable-automation"])
     options.add_experimental_option("useAutomationExtension", False)
 
@@ -56,15 +58,32 @@ def get_page_content(url: str, debug: bool = False) -> str:
     driver = webdriver.Chrome(service=service, options=options)
 
     driver.execute_cdp_cmd("Network.enable", {})
-    driver.execute_cdp_cmd("Network.setBlockedURLs", {
-        "urls": [
-            "*.jpg", "*.jpeg", "*.png", "*.gif", "*.svg", "*.webp",
-            "*.mp4", "*.webm", "*.avi", "*.mov",
-            "*.mp3", "*.wav", "*.ogg", "*.flac",
-            "*.ico",
-            "*.woff", "*.woff2", "*.ttf", "*.otf",
-        ]
-    })
+    driver.execute_cdp_cmd(
+        "Network.setBlockedURLs",
+        {
+            "urls": [
+                "*.jpg",
+                "*.jpeg",
+                "*.png",
+                "*.gif",
+                "*.svg",
+                "*.webp",
+                "*.mp4",
+                "*.webm",
+                "*.avi",
+                "*.mov",
+                "*.mp3",
+                "*.wav",
+                "*.ogg",
+                "*.flac",
+                "*.ico",
+                "*.woff",
+                "*.woff2",
+                "*.ttf",
+                "*.otf",
+            ]
+        },
+    )
 
     stealth(
         driver,
@@ -98,8 +117,9 @@ def count_pattern_occurrences(pattern: str, text: str) -> int:
 
 
 def count_keyword_occurrences(text: str) -> dict[str, int]:
-    with open("webshopkeywords", "r") as f:
-        patterns = [line.strip() for line in f if line.strip()]
+    text = unicodedata.normalize("NFC", text)
+    with open("webshopkeywords", "r", encoding="utf-8") as f:
+        patterns = [unicodedata.normalize("NFC", line.strip()) for line in f if line.strip()]
     return {pattern: count_pattern_occurrences(pattern, text) for pattern in patterns}
 
 
@@ -121,5 +141,5 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("url", help="URL to scrape")
     args = parser.parse_args()
-    content = get_page_content(args.url, True)
+    content = get_page_content(args.url, False)
     print(format_occurrences(count_keyword_occurrences(content)))
