@@ -15,7 +15,7 @@ def _find_binary(*candidates: str) -> str | None:
     return None
 
 
-def _wait_for_dom_stability(driver, max_wait=30, poll=0.5, stable_for=3.0):
+def _wait_for_dom_stability(driver, max_wait=60, poll=0.5, stable_for=3.0):
     prev = None
     stable = 0.0
     deadline = time.time() + max_wait
