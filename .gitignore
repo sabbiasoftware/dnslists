@@ -1,4 +1,6 @@
 __pycache__/
 .venv/
-pihole-FTL.db
 .ruff_cache/
+pihole-FTL.db
+inspect_url.html
+inspect_url.png

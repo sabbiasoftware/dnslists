@@ -7,4 +7,5 @@ requires-python = ">=3.14"
 dependencies = [
     "selenium>=4.47.0",
     "selenium-stealth>=1.0.6",
+    "waitless>=1.0.0",
 ]

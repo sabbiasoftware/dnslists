@@ -7,6 +7,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium_stealth import stealth
+from waitless import wait_for_stability
 
 
 def _find_binary(*candidates: str) -> str | None:
@@ -16,11 +17,12 @@ def _find_binary(*candidates: str) -> str | None:
     return None
 
 
-def get_page_content(url: str, save_content: bool = False) -> str:
+def get_page_content(url: str, debug: bool = False) -> str:
     if not url.startswith(("http://", "https://")):
         url = f"https://{url}"
     options = webdriver.ChromeOptions()
-    options.add_argument("--headless")
+    if not debug:
+        options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_experimental_option("excludeSwitches", ["enable-automation"])
@@ -30,8 +32,12 @@ def get_page_content(url: str, save_content: bool = False) -> str:
     if chromium_binary:
         options.binary_location = chromium_binary
 
-    chromedriver_path = _find_binary("/usr/bin/chromedriver", "/usr/lib/chromium-browser/chromedriver")
-    service = Service(executable_path=chromedriver_path) if chromedriver_path else Service()
+    chromedriver_path = _find_binary(
+        "/usr/bin/chromedriver", "/usr/lib/chromium-browser/chromedriver"
+    )
+    service = (
+        Service(executable_path=chromedriver_path) if chromedriver_path else Service()
+    )
 
     driver = webdriver.Chrome(service=service, options=options)
 
@@ -50,10 +56,12 @@ def get_page_content(url: str, save_content: bool = False) -> str:
         WebDriverWait(driver, 10).until(
             EC.presence_of_all_elements_located((By.TAG_NAME, "body"))
         )
+        wait_for_stability(driver)
         page_source = driver.page_source
-        if save_content:
+        if debug:
             with open("inspect_url.html", "w") as f:
                 f.write(page_source)
+            driver.save_screenshot("inspect_url.png")
         return page_source
     finally:
         driver.quit()
