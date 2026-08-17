@@ -54,14 +54,12 @@ source = { virtual = "." }
 dependencies = [
     { name = "selenium" },
     { name = "selenium-stealth" },
-    { name = "waitless" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "selenium", specifier = ">=4.47.0" },
     { name = "selenium-stealth", specifier = ">=1.0.6" },
-    { name = "waitless", specifier = ">=1.0.0" },
 ]
 
 [[package]]
@@ -210,18 +208,6 @@ wheels = [
 [package.optional-dependencies]
 socks = [
     { name = "pysocks" },
-]
-
-[[package]]
-name = "waitless"
-version = "1.0.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "selenium" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/a6/12/c36ae4c6042aaf6eb140d9fb13ae6fcaf6364d3fb2a8af6ba461ddc97f28/waitless-1.0.2.tar.gz", hash = "sha256:b9e7f42629f1a8838ce68f17fc734aa1406940e6fb7427d923dfe0bc23805e49", size = 34580, upload-time = "2026-07-24T05:06:43.094Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/25/80/c948482871f74316675fa29917ae9dc6d140a9276fee02d5e8126b7877a9/waitless-1.0.2-py3-none-any.whl", hash = "sha256:179ca148c7a40ec25a9fbb9a975a74f798861bca175ec53007a893a5b4bf1df1", size = 37097, upload-time = "2026-07-24T05:06:41.99Z" },
 ]
 
 [[package]]

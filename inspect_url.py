@@ -1,13 +1,11 @@
 import argparse
+import hashlib
 import os
 import re
+import time
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.by import By
 from selenium_stealth import stealth
-from waitless import wait_for_stability
 
 
 def _find_binary(*candidates: str) -> str | None:
@@ -15,6 +13,22 @@ def _find_binary(*candidates: str) -> str | None:
         if os.path.isfile(path):
             return path
     return None
+
+
+def _wait_for_dom_stability(driver, max_wait=15, poll=0.5, stable_for=2.0):
+    prev = None
+    stable = 0.0
+    deadline = time.time() + max_wait
+    while time.time() < deadline:
+        h = hashlib.md5(driver.page_source.encode()).hexdigest()
+        if h == prev:
+            stable += poll
+            if stable >= stable_for:
+                return
+        else:
+            stable = 0.0
+            prev = h
+        time.sleep(poll)
 
 
 def get_page_content(url: str, debug: bool = False) -> str:
@@ -53,10 +67,7 @@ def get_page_content(url: str, debug: bool = False) -> str:
 
     try:
         driver.get(url)
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_all_elements_located((By.TAG_NAME, "body"))
-        )
-        wait_for_stability(driver)
+        _wait_for_dom_stability(driver)
         page_source = driver.page_source
         if debug:
             with open("inspect_url.html", "w") as f:
