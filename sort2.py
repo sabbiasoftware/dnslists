@@ -225,8 +225,7 @@ def main(stdscr):
                 break
             elif c == "i":
                 stdscr.addstr(4, 0, "Inspecting")
-                keyword_stats = inspect_url(domain)
-                stdscr.addstr(4, 0, keyword_stats)
+                info = inspect_url(domain)
             if c in "bwBW":
                 domainToToggle = (
                     domain[i:] if c in "bw" else "@@||{}^".format(domain[i:])
