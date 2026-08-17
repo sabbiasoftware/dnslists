@@ -1,11 +1,19 @@
 import argparse
+import os
 import re
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium_stealth import stealth
-from webdriver_manager.chrome import ChromeDriverManager
+
+
+def _find_binary(*candidates: str) -> str | None:
+    for path in candidates:
+        if os.path.isfile(path):
+            return path
+    return None
 
 
 def get_page_content(url: str, save_content: bool = False) -> str:
@@ -13,13 +21,19 @@ def get_page_content(url: str, save_content: bool = False) -> str:
         url = f"https://{url}"
     options = webdriver.ChromeOptions()
     options.add_argument("--headless")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
     options.add_experimental_option("excludeSwitches", ["enable-automation"])
     options.add_experimental_option("useAutomationExtension", False)
-    # options.set_preference("intl.accept_languages", "hu-HU,hu")
-    driver = webdriver.Chrome(
-        executable_path=ChromeDriverManager().install(),
-        options=options,
-    )
+
+    chromium_binary = _find_binary("/usr/bin/chromium", "/usr/bin/chromium-browser")
+    if chromium_binary:
+        options.binary_location = chromium_binary
+
+    chromedriver_path = _find_binary("/usr/bin/chromedriver", "/usr/lib/chromium-browser/chromedriver")
+    service = Service(executable_path=chromedriver_path) if chromedriver_path else Service()
+
+    driver = webdriver.Chrome(service=service, options=options)
 
     stealth(
         driver,
