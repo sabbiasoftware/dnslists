@@ -5,6 +5,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium_stealth import stealth
+from webdriver_manager.chrome import ChromeDriverManager
 
 
 def get_page_content(url: str, save_content: bool = False) -> str:
@@ -15,7 +16,10 @@ def get_page_content(url: str, save_content: bool = False) -> str:
     options.add_experimental_option("excludeSwitches", ["enable-automation"])
     options.add_experimental_option("useAutomationExtension", False)
     # options.set_preference("intl.accept_languages", "hu-HU,hu")
-    driver = webdriver.Chrome(options=options)
+    driver = webdriver.Chrome(
+        executable_path=ChromeDriverManager().install(),
+        options=options,
+    )
 
     stealth(
         driver,
