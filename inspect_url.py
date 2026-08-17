@@ -55,6 +55,17 @@ def get_page_content(url: str, debug: bool = False) -> str:
 
     driver = webdriver.Chrome(service=service, options=options)
 
+    driver.execute_cdp_cmd("Network.enable", {})
+    driver.execute_cdp_cmd("Network.setBlockedURLs", {
+        "urls": [
+            "*.jpg", "*.jpeg", "*.png", "*.gif", "*.svg", "*.webp",
+            "*.mp4", "*.webm", "*.avi", "*.mov",
+            "*.mp3", "*.wav", "*.ogg", "*.flac",
+            "*.ico",
+            "*.woff", "*.woff2", "*.ttf", "*.otf",
+        ]
+    })
+
     stealth(
         driver,
         languages=["hu-HU", "hu"],
