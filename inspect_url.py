@@ -16,7 +16,7 @@ def _find_binary(*candidates: str) -> str | None:
     return None
 
 
-def _wait_for_dom_stability(driver, max_wait=60, poll=0.5, stable_for=3.0):
+def _wait_for_dom_stability(driver, max_wait=30, poll=0.5, stable_for=2.0):
     prev = None
     stable = 0.0
     deadline = time.time() + max_wait
@@ -119,7 +119,9 @@ def count_pattern_occurrences(pattern: str, text: str) -> int:
 def count_keyword_occurrences(text: str) -> dict[str, int]:
     text = unicodedata.normalize("NFC", text)
     with open("webshopkeywords", "r", encoding="utf-8") as f:
-        patterns = [unicodedata.normalize("NFC", line.strip()) for line in f if line.strip()]
+        patterns = [
+            unicodedata.normalize("NFC", line.strip()) for line in f if line.strip()
+        ]
     return {pattern: count_pattern_occurrences(pattern, text) for pattern in patterns}
 
 

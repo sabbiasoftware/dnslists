@@ -48,7 +48,7 @@ def addstrClip(stdscr, y, x, text, attr=0):
         col = 0
         end = len(line)
         for j, ch in enumerate(line):
-            width = wcwidth(ord(ch)) if 1 < len(ch.encode("utf-8")) else 1
+            width = wcwidth(ch) if 1 < len(ch.encode("utf-8")) else 1
             if width == -1:
                 width = 1
             if col + width > maxcol:
