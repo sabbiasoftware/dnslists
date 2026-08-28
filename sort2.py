@@ -1,8 +1,28 @@
 import os
 import sys
+import locale
 import subprocess
 import curses
+from wcwidth import wcwidth
 from inspect_url import inspect_url
+
+
+def setUnicodeLocale():
+    try:
+        locale.setlocale(locale.LC_ALL, "")
+        return
+    except locale.Error:
+        pass
+
+    for name in ("hu_HU.UTF-8", "C.UTF-8", "en_US.UTF-8"):
+        try:
+            locale.setlocale(locale.LC_ALL, name)
+            return
+        except locale.Error:
+            continue
+
+
+setUnicodeLocale()
 
 exitNeeded = False
 exitCode = 0
@@ -15,6 +35,27 @@ def needExit(code, message):
     exitNeeded = True
     exitCode = code
     exitMessage = message
+
+
+def addstrClip(stdscr, y, x, text, attr=0):
+    h, w = stdscr.getmaxyx()
+    maxcol = w - x
+    for i, line in enumerate(text.splitlines()):
+        if y + i >= h:
+            break
+        if maxcol <= 0:
+            return
+        col = 0
+        end = len(line)
+        for j, ch in enumerate(line):
+            width = wcwidth(ord(ch)) if 1 < len(ch.encode("utf-8")) else 1
+            if width == -1:
+                width = 1
+            if col + width > maxcol:
+                end = j
+                break
+            col += width
+        stdscr.addstr(y + i, x, line[:end], attr)
 
 
 def is_match(domain, list):
@@ -161,7 +202,8 @@ def main(stdscr):
         info = ""
         while True:
             stdscr.clear()
-            stdscr.addstr(
+            addstrClip(
+                stdscr,
                 0,
                 0,
                 "{} / {}   {}{}   {} [{}]".format(
@@ -178,18 +220,20 @@ def main(stdscr):
                     else (3 if is_white and not is_black else 4)
                 ),
             )
-            stdscr.addstr(
+            addstrClip(
+                stdscr,
                 1,
                 0,
                 "[q] quit   [s] save   [jk] prev/next   [hl] slice   [c] check   [C] check all   [i] inspect",
             )
             if not is_listed:
-                stdscr.addstr(
+                addstrClip(
+                    stdscr,
                     2,
                     0,
                     "[b] black   [w] white   [B] black-ABP   [W] white-ABP",
                 )
-            stdscr.addstr(4, 0, info)
+            addstrClip(stdscr, 4, 0, info)
             stdscr.refresh()
 
             c = stdscr.getkey()
@@ -217,14 +261,15 @@ def main(stdscr):
                 info = checkres
             elif c == "C":
                 for d in domains:
-                    stdscr.addstr(4, 0, "Checking: " + d)
+                    addstrClip(stdscr, 4, 0, "Checking: " + d)
                     stdscr.clrtoeol()
                     stdscr.refresh()
                     if checkDomain(d) != "":
                         blacklist.append(d)
                 break
             elif c == "i":
-                stdscr.addstr(4, 0, "Inspecting")
+                addstrClip(stdscr, 4, 0, "Inspecting")
+                stdscr.refresh()
                 info = inspect_url(domain)
             if c in "bwBW":
                 domainToToggle = (
