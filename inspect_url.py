@@ -136,7 +136,10 @@ def format_occurrences(occurrences: dict[str, int]) -> str:
 
 
 def inspect_url(url: str) -> str:
-    return format_occurrences(count_keyword_occurrences(get_page_content(url)))
+    try:
+        return format_occurrences(count_keyword_occurrences(get_page_content(url)))
+    except Exception as e:
+        return f"Error inspecting {url}: {e}"
 
 
 if __name__ == "__main__":
