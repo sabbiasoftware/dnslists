@@ -269,6 +269,7 @@ def main(stdscr):
                 break
             elif c == "i":
                 addstrClip(stdscr, 4, 0, "Inspecting")
+                stdscr.clrtoeol()
                 stdscr.refresh()
                 info = inspect_url(domain)
             if c in "bwBW":
