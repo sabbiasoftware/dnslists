@@ -28,7 +28,7 @@ def wait_for_dom_stability(
         if s >= keyword_count_threshold:
             return
 
-        h = hashlib.md5(driver.page_source).hexdigest()
+        h = hashlib.md5(driver.page_source.encode()).hexdigest()
         if h == prev:
             stable += poll
             if stable >= stable_for:
@@ -151,10 +151,15 @@ def format_occurrences(occurrences: dict[str, int]) -> str:
 
 
 def inspect_content(url: str) -> str:
+    start = time.time()
     try:
-        return format_occurrences(count_all_keyword_occurrences(get_page_content(url)))
+        result = format_occurrences(
+            count_all_keyword_occurrences(get_page_content(url))
+        )
     except Exception as e:
-        return f"Error inspecting {url}: {e}"
+        result = f"Error inspecting {url}: {e}"
+    elapsed = time.time() - start
+    return f"Inspected in {elapsed:.1f}s\n{result}"
 
 
 if __name__ == "__main__":

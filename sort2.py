@@ -109,7 +109,7 @@ def runQuery(select):
 
 
 def readDomains():
-    lookback = "280 day"
+    lookback = "28 day"
 
     select = """
         select
@@ -118,7 +118,7 @@ def readDomains():
         where
           (client='192.168.1.103' or client='192.168.1.101' or client='192.168.1.154') and
           status in (1, 4, 5, 6, 7, 8, 9, 10, 11, 15, 16, 18) and
-          datetime(timestamp, 'unixepoch', 'localtime') > datetime('now', '{}') and
+          datetime(timestamp, 'unixepoch', 'localtime') > datetime('now', '-{}') and
           domain {}like '%.hu'
         group by domain
         order by count(id)
