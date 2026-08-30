@@ -164,8 +164,8 @@ def checkDomain(domain):
 
 whitelist = readList("whitelist")
 blacklist = readList("blacklist")
-domains = readDomains()
-# domains = filterDomains(readDomains())
+# domains = readDomains()
+domains = filterDomains(readDomains())
 
 
 def main(stdscr):
