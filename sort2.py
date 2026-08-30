@@ -109,22 +109,7 @@ def runQuery(select):
 
 
 def readDomains():
-    select = """
-        select
-          domain
-        from queries
-        where
-          (client='192.168.1.103' or client='192.168.1.101' or client='192.168.1.154') and
-          status in (1, 4, 5, 6, 7, 8, 9, 10, 11, 15, 16, 18) and
-          datetime(timestamp, 'unixepoch', 'localtime') > datetime('now', '-28 day') and
-          domain like '%.hu'
-        group by domain
-        order by count(id)
-    """
-
-    domains = runQuery(select)
-    if domains is None:
-        return
+    lookback = "280 day"
 
     select = """
         select
@@ -133,17 +118,34 @@ def readDomains():
         where
           (client='192.168.1.103' or client='192.168.1.101' or client='192.168.1.154') and
           status in (1, 4, 5, 6, 7, 8, 9, 10, 11, 15, 16, 18) and
-          datetime(timestamp, 'unixepoch', 'localtime') > datetime('now', '-28 day') and
-          domain not like '%.hu'
+          datetime(timestamp, 'unixepoch', 'localtime') > datetime('now', '{}') and
+          domain {}like '%.hu'
         group by domain
         order by count(id)
     """
 
-    domains2 = runQuery(select)
-    if domains2 is None:
-        return
+    select_hu = select.format(lookback, "")
+    domains_hu = runQuery(select_hu)
+    if domains_hu is None:
+        return []
 
-    return domains + domains2
+    select_nonhu = select.format(lookback, "not ")
+    domains_nonhu = runQuery(select_nonhu)
+    if domains_nonhu is None:
+        return []
+
+    return domains_hu + domains_nonhu
+
+
+def filterDomains(domains):
+    return list(
+        filter(
+            lambda d: (d != "")
+            and not is_match(d, whitelist)
+            and not is_match(d, blacklist),
+            domains,
+        )
+    )
 
 
 def checkDomain(domain):
@@ -160,28 +162,16 @@ def checkDomain(domain):
         return checkres.stdout.decode("utf-8")
 
 
+whitelist = readList("whitelist")
+blacklist = readList("blacklist")
+domains = readDomains()
+# domains = filterDomains(readDomains())
+
+
 def main(stdscr):
-    global exitNeeded
-
-    whitelist = readList("whitelist")
-    blacklist = readList("blacklist")
-    domains = readDomains()
-
-    if domains is None or exitNeeded:
-        return
-
-    domains = list(
-        filter(
-            lambda d: (d != "")
-            and not is_match(d, whitelist)
-            and not is_match(d, blacklist),
-            domains,
-        )
-    )
-
-    if len(domains) == 0:
-        needExit(0, "No domains to sort")
-        return
+    global whiteList
+    global blacklist
+    global domains
 
     curses.curs_set(False)
     curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK)
@@ -287,7 +277,8 @@ def main(stdscr):
         # print("{}{} {}".format("W" if is_white else " ", "B" if is_black else " ", domain))
 
 
+if len(domains) == 0:
+    print("No domains to sort")
+    sys.exit(0)
+
 curses.wrapper(main)
-if exitMessage != "":
-    print(exitMessage)
-sys.exit(exitCode)

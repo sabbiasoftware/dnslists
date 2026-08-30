@@ -9,19 +9,26 @@ from selenium.webdriver.chrome.service import Service
 from selenium_stealth import stealth
 
 
-def _find_binary(*candidates: str) -> str | None:
+def find_binary(*candidates: str) -> str | None:
     for path in candidates:
         if os.path.isfile(path):
             return path
     return None
 
 
-def _wait_for_dom_stability(driver, max_wait=30, poll=0.5, stable_for=2.0):
+def wait_for_dom_stability(
+    driver, max_wait=30, poll=0.5, stable_for=2.0, keyword_count_threshold=50
+):
     prev = None
     stable = 0.0
     deadline = time.time() + max_wait
     while time.time() < deadline:
-        h = hashlib.md5(driver.page_source.encode()).hexdigest()
+        occurrences = count_all_keyword_occurrences(driver.page_source)
+        s = sum(c for c in occurrences.values())
+        if s >= keyword_count_threshold:
+            return
+
+        h = hashlib.md5(driver.page_source).hexdigest()
         if h == prev:
             stable += poll
             if stable >= stable_for:
@@ -44,11 +51,11 @@ def get_page_content(url: str, debug: bool = False) -> str:
     options.add_experimental_option("excludeSwitches", ["enable-automation"])
     options.add_experimental_option("useAutomationExtension", False)
 
-    chromium_binary = _find_binary("/usr/bin/chromium", "/usr/bin/chromium-browser")
+    chromium_binary = find_binary("/usr/bin/chromium", "/usr/bin/chromium-browser")
     if chromium_binary:
         options.binary_location = chromium_binary
 
-    chromedriver_path = _find_binary(
+    chromedriver_path = find_binary(
         "/usr/bin/chromedriver", "/usr/lib/chromium-browser/chromedriver"
     )
     service = (
@@ -97,7 +104,7 @@ def get_page_content(url: str, debug: bool = False) -> str:
 
     try:
         driver.get(url)
-        _wait_for_dom_stability(driver)
+        wait_for_dom_stability(driver)
         page_source = driver.page_source
         if debug:
             with open("inspect_content.html", "w") as f:
@@ -108,7 +115,7 @@ def get_page_content(url: str, debug: bool = False) -> str:
         driver.quit()
 
 
-def count_pattern_occurrences(pattern: str, text: str) -> int:
+def count_keyword_occurrences(pattern: str, text: str) -> int:
     escaped = re.escape(pattern)
     regex = (
         rf"(?<![a-zA-Z0-9áéíóöőúüűÁÉÍÓÖŐÚÜŰ]){escaped}(?![a-zA-Z0-9áéíóöőúüűÁÉÍÓÖŐÚÜŰ])"
@@ -116,13 +123,21 @@ def count_pattern_occurrences(pattern: str, text: str) -> int:
     return len(re.findall(regex, text, re.IGNORECASE))
 
 
-def count_keyword_occurrences(text: str) -> dict[str, int]:
+blacklist_contentkeywords = None
+
+
+def count_all_keyword_occurrences(text: str) -> dict[str, int]:
     text = unicodedata.normalize("NFC", text)
-    with open("blacklist_contentkeywords", "r", encoding="utf-8") as f:
-        patterns = [
-            unicodedata.normalize("NFC", line.strip()) for line in f if line.strip()
-        ]
-    return {pattern: count_pattern_occurrences(pattern, text) for pattern in patterns}
+    global blacklist_contentkeywords
+    if blacklist_contentkeywords is None:
+        with open("blacklist_contentkeywords", "r", encoding="utf-8") as f:
+            blacklist_contentkeywords = [
+                unicodedata.normalize("NFC", line.strip()) for line in f if line.strip()
+            ]
+    return {
+        keyword: count_keyword_occurrences(keyword, text)
+        for keyword in blacklist_contentkeywords
+    }
 
 
 def format_occurrences(occurrences: dict[str, int]) -> str:
@@ -137,7 +152,7 @@ def format_occurrences(occurrences: dict[str, int]) -> str:
 
 def inspect_content(url: str) -> str:
     try:
-        return format_occurrences(count_keyword_occurrences(get_page_content(url)))
+        return format_occurrences(count_all_keyword_occurrences(get_page_content(url)))
     except Exception as e:
         return f"Error inspecting {url}: {e}"
 
@@ -147,4 +162,4 @@ if __name__ == "__main__":
     parser.add_argument("url", help="URL to scrape")
     args = parser.parse_args()
     content = get_page_content(args.url, False)
-    print(format_occurrences(count_keyword_occurrences(content)))
+    print(format_occurrences(count_all_keyword_occurrences(content)))
