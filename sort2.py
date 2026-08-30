@@ -4,7 +4,7 @@ import locale
 import subprocess
 import curses
 from wcwidth import wcwidth
-from inspect_url import inspect_url
+from inspect_content import inspect_content
 
 
 def setUnicodeLocale():
@@ -147,7 +147,7 @@ def readDomains():
 
 
 def checkDomain(domain):
-    blackEnd = [".shop", ".site", ".online", ".top", ".website"]
+    blackEnd = readList("blacklist_urlkeywords")
     for be in blackEnd:
         if domain.endswith(be):
             return "Black end: " + be
@@ -271,7 +271,7 @@ def main(stdscr):
                 addstrClip(stdscr, 4, 0, "Inspecting")
                 stdscr.clrtoeol()
                 stdscr.refresh()
-                info = inspect_url(domain)
+                info = inspect_content(domain)
             if c in "bwBW":
                 domainToToggle = (
                     domain[i:] if c in "bw" else "@@||{}^".format(domain[i:])

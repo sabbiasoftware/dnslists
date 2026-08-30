@@ -100,9 +100,9 @@ def get_page_content(url: str, debug: bool = False) -> str:
         _wait_for_dom_stability(driver)
         page_source = driver.page_source
         if debug:
-            with open("inspect_url.html", "w") as f:
+            with open("inspect_content.html", "w") as f:
                 f.write(page_source)
-            driver.save_screenshot("inspect_url.png")
+            driver.save_screenshot("inspect_content.png")
         return page_source
     finally:
         driver.quit()
@@ -118,7 +118,7 @@ def count_pattern_occurrences(pattern: str, text: str) -> int:
 
 def count_keyword_occurrences(text: str) -> dict[str, int]:
     text = unicodedata.normalize("NFC", text)
-    with open("webshopkeywords", "r", encoding="utf-8") as f:
+    with open("blacklist_contentkeywords", "r", encoding="utf-8") as f:
         patterns = [
             unicodedata.normalize("NFC", line.strip()) for line in f if line.strip()
         ]
@@ -135,7 +135,7 @@ def format_occurrences(occurrences: dict[str, int]) -> str:
     return "\n".join(lines)
 
 
-def inspect_url(url: str) -> str:
+def inspect_content(url: str) -> str:
     try:
         return format_occurrences(count_keyword_occurrences(get_page_content(url)))
     except Exception as e:
