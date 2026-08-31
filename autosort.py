@@ -5,7 +5,7 @@ import os
 import sys
 import time
 
-from domain_helpers import DomainType, readDomains, readList, writeList, filterDomains
+from domain_helpers import DomainType, readDomains2, readList, writeList, filterDomains
 from inspect_domain import inspect_domain
 
 
@@ -27,7 +27,9 @@ def main():
     args = parser.parse_args()
     dry_run = not args.update
 
-    lock_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "autosort.lock")
+    lock_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "autosort.lock"
+    )
     try:
         lock_fd = os.open(lock_path, os.O_WRONLY | os.O_CREAT, 0o644)
         fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -40,7 +42,9 @@ def main():
 
     whitelist = readList("whitelist")
     blacklist = readList("blacklist")
-    domains = filterDomains(readDomains(verbose=True), whitelist, blacklist, verbose=True)
+    domains = filterDomains(
+        readDomains2(verbose=False), whitelist, blacklist, verbose=False
+    )
 
     sorted_count = 0
     if domains:
