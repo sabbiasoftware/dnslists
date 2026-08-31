@@ -10,12 +10,12 @@ class DomainType(Enum):
     UNKNOWN = auto()
 
 
-def is_match(domain, list):
-    if domain in list:
+def is_match(domain, domains):
+    if domain in domains:
         return True
 
     for i in range(0, len(domain)):
-        if "@@||{}^".format(domain[i:]) in list:
+        if "@@||{}^".format(domain[i:]) in domains:
             return True
     return False
 
@@ -122,11 +122,15 @@ def readDomains2(verbose=False):
 
 def filterDomains(domains, whitelist, blacklist, verbose=False):
     start = time.time()
+
+    whitelistset = set(whitelist)
+    blacklistset = set(blacklist)
+
     result = list(
         filter(
             lambda d: (d != "")
-            and not is_match(d, whitelist)
-            and not is_match(d, blacklist),
+            and not is_match(d, whitelistset)
+            and not is_match(d, blacklistset),
             domains,
         )
     )
