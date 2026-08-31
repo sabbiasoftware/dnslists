@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+cd /home/rpi/pihole/dnslists
 /home/rpi/.local/bin/uv run autosort.py -u
 
 # Only continue if autosort.py changed whitelist or blacklist
