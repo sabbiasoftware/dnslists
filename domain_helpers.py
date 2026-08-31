@@ -1,6 +1,7 @@
 from enum import Enum, auto
 import subprocess
 import os
+import time
 
 
 class DomainType(Enum):
@@ -57,7 +58,12 @@ def runQuery(select):
         return queryres.stdout.decode("utf-8").split("\n")
 
 
-def readDomains():
+def readDomains(verbose=False):
+    start = time.time()
+
+    def elapsed():
+        return time.time() - start
+
     lookback = "28 day"
 
     select = """
@@ -76,18 +82,25 @@ def readDomains():
     select_hu = select.format(lookback, "")
     domains_hu = runQuery(select_hu)
     if domains_hu is None:
+        if verbose:
+            print(f"readDomains took {elapsed():.3f}s")
         return []
 
     select_nonhu = select.format(lookback, "not ")
     domains_nonhu = runQuery(select_nonhu)
     if domains_nonhu is None:
+        if verbose:
+            print(f"readDomains took {elapsed():.3f}s")
         return []
 
+    if verbose:
+        print(f"readDomains took {elapsed():.3f}s")
     return domains_hu + domains_nonhu
 
 
-def filterDomains(domains, whitelist, blacklist):
-    return list(
+def filterDomains(domains, whitelist, blacklist, verbose=False):
+    start = time.time()
+    result = list(
         filter(
             lambda d: (d != "")
             and not is_match(d, whitelist)
@@ -95,3 +108,6 @@ def filterDomains(domains, whitelist, blacklist):
             domains,
         )
     )
+    if verbose:
+        print(f"filterDomains took {time.time() - start:.3f}s")
+    return result

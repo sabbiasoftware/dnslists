@@ -40,7 +40,7 @@ def main():
 
     whitelist = readList("whitelist")
     blacklist = readList("blacklist")
-    domains = filterDomains(readDomains(), whitelist, blacklist)
+    domains = filterDomains(readDomains(verbose=True), whitelist, blacklist, verbose=True)
 
     sorted_count = 0
     if domains:
