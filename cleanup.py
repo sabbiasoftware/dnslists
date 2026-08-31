@@ -1,27 +1,8 @@
-def is_match(domain, list):
-    if domain in list:
-        return True
-
-    for i in range(0, len(domain)):
-        if "@@||{}^".format(domain[i:]) in list:
-            return True
-    return False
-
-
-def readList(listfilename):
-    list = []
-    with open(listfilename, "r") as f:
-        list = f.read().splitlines()
-    return list
-
-
-def writeList(listfilename, list):
-    with open(listfilename, "w") as f:
-        f.write("\n".join(list) + "\n")
+from domain_helpers import readList, writeList
 
 
 def checkIntersection(l1, l2):
-    intersection = list(set(whitelist) & set(blacklist))
+    intersection = list(set(l1) & set(l2))
     if len(intersection) > 0:
         print("In both lists:")
         for i in intersection:

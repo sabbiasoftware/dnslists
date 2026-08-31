@@ -8,6 +8,10 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium_stealth import stealth
 
+from domain_helpers import DomainType
+
+KEYWORD_COUNT_THRESHOLD = 20
+
 
 def find_binary(*candidates: str) -> str | None:
     for path in candidates:
@@ -17,7 +21,11 @@ def find_binary(*candidates: str) -> str | None:
 
 
 def wait_for_dom_stability(
-    driver, max_wait=30, poll=0.5, stable_for=2.0, keyword_count_threshold=50
+    driver,
+    max_wait=30,
+    poll=0.5,
+    stable_for=2.0,
+    keyword_count_threshold=KEYWORD_COUNT_THRESHOLD,
 ):
     prev = None
     stable = 0.0
@@ -150,16 +158,21 @@ def format_occurrences(occurrences: dict[str, int]) -> str:
     return "\n".join(lines)
 
 
-def inspect_content(url: str) -> str:
+def inspect_content(url: str) -> tuple[DomainType, str]:
+    dt = DomainType.UNKNOWN
+    msg = ""
     start = time.time()
     try:
-        result = format_occurrences(
-            count_all_keyword_occurrences(get_page_content(url))
-        )
+        occurrences = count_all_keyword_occurrences(get_page_content(url))
+        s = sum(c for c in occurrences.values())
+        dt = DomainType.BLACK if s >= KEYWORD_COUNT_THRESHOLD else DomainType.WHITE
+        msg = f"Found {s} keywords"
     except Exception as e:
-        result = f"Error inspecting {url}: {e}"
+        dt = DomainType.BLACK
+        msg = f"Encountered error ({str(e)})"
     elapsed = time.time() - start
-    return f"Inspected in {elapsed:.1f}s\n{result}"
+    msg += f" in {elapsed:.1f}s"
+    return dt, msg
 
 
 if __name__ == "__main__":
