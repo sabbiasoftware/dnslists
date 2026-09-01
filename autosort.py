@@ -46,6 +46,9 @@ def main():
         readDomains2(verbose=False), whitelist, blacklist, verbose=False
     )
 
+    whiteChanged = False
+    blackChanged = False
+    
     sorted_count = 0
     if domains:
         for domain in domains:
@@ -61,12 +64,16 @@ def main():
             if not dry_run:
                 if domain_type == DomainType.BLACK:
                     blacklist.append(domain)
+                    blackChanged = True
                 elif domain_type == DomainType.WHITE:
                     whitelist.append(domain)
+                    whiteChanged = True
 
     if not dry_run:
-        writeList("whitelist", whitelist)
-        writeList("blacklist", blacklist)
+        if whiteChanged:
+            writeList("whitelist", whitelist)
+        if blackChanged:
+            writeList("blacklist", blacklist)
 
     log(f"Autosort end, sorted {sorted_count} domains in {time.time() - start:.3f}s")
 
