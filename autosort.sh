@@ -9,5 +9,5 @@ if git status --porcelain -- whitelist blacklist | grep -q .; then
   git add whitelist blacklist
   git commit -m "updated lists by autosort"
   git push
-  sudo pihole updateGravity
+  sudo pihole updateGravity > /dev/null
 fi
