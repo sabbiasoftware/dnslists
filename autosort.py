@@ -8,10 +8,20 @@ import time
 from domain_helpers import DomainType, readDomains2, readList, writeList, filterDomains
 from inspect_domain import inspect_domain
 
+logts = None
+
+
+def startlog():
+    global logts
+    logts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+
 
 def log(msg: str):
-    ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-    print(f"{ts} {msg}")
+    global logts
+    if logts is None:
+        startlog()
+    print(f"{logts} {msg}")
+    logts = None
 
 
 def main():
@@ -37,7 +47,7 @@ def main():
         print("Another instance is running, exiting.")
         sys.exit(0)
 
-    log("Autosort begin")
+    startlog()
     start = time.time()
 
     whitelist = readList("whitelist")
@@ -48,9 +58,10 @@ def main():
 
     whiteChanged = False
     blackChanged = False
-    
+
     sorted_count = 0
-    if domains:
+    if domains and len(domains) > 0:
+        log("Autosort: begin sorting")
         for domain in domains:
             sorted_count += 1
             try:
@@ -69,13 +80,17 @@ def main():
                     whitelist.append(domain)
                     whiteChanged = True
 
-    if not dry_run:
-        if whiteChanged:
-            writeList("whitelist", whitelist)
-        if blackChanged:
-            writeList("blacklist", blacklist)
+        if not dry_run:
+            if whiteChanged:
+                writeList("whitelist", whitelist)
+            if blackChanged:
+                writeList("blacklist", blacklist)
 
-    log(f"Autosort end, sorted {sorted_count} domains in {time.time() - start:.3f}s")
+        log(f"Autosort: sorted {sorted_count} domains ({time.time() - start:.3f}s)")
+    else:
+        global logts
+        logts = None
+        log(f"Autosort: no domains ({time.time() - start:.3f}s)")
 
     fcntl.flock(lock_fd, fcntl.LOCK_UN)
     os.close(lock_fd)
