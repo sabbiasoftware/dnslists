@@ -68,7 +68,7 @@ def main():
         writeList("whitelist", whitelist)
         writeList("blacklist", blacklist)
 
-    log(f"Autosort end, sorted {sorted_count} domains in {time.time() - start:.1f}s")
+    log(f"Autosort end, sorted {sorted_count} domains in {time.time() - start:.3f}s")
 
     fcntl.flock(lock_fd, fcntl.LOCK_UN)
     os.close(lock_fd)
