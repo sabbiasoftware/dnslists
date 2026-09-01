@@ -102,6 +102,7 @@ def readDomains2(verbose=False):
     start = time.time()
 
     lookback = "28 day"
+    mintimestamp = time.time() - 28 * 24 * 60 * 60
 
     select = f"""
         select distinct d.domain
@@ -111,7 +112,7 @@ def readDomains2(verbose=False):
         where
             (c.ip='192.168.1.103' or c.ip='192.168.1.101' or c.ip='192.168.1.154') and
             status in (1, 4, 5, 6, 7, 8, 9, 10, 11, 15, 16, 18) and
-            datetime(timestamp, 'unixepoch', 'localtime') > datetime('now', '-{lookback}')
+            timestamp >= {mintimestamp}
     """
     domains = runQuery(select)
     if verbose:
