@@ -101,7 +101,7 @@ def readDomains(verbose=False):
 def readDomains2(verbose=False):
     start = time.time()
 
-    mintimestamp = time.time() - 24 * 60 * 60
+    mintimestamp = time.time() - 15 * 60
 
     select = f"""
         select distinct d.domain
