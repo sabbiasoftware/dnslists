@@ -2,7 +2,7 @@
 set -euo pipefail
 
 cd /home/rpi/pihole/dnslists
-/home/rpi/.local/bin/uv run autosort.py -u
+sudo /home/rpi/.local/bin/uv run autosort.py -u
 
 # Only continue if autosort.py changed whitelist or blacklist
 if git status --porcelain -- whitelist blacklist | grep -q .; then
