@@ -1,5 +1,6 @@
 from enum import Enum, auto
 import subprocess
+import sqlite3
 import os
 import time
 
@@ -58,6 +59,44 @@ def runQuery(select):
         return queryres.stdout.decode("utf-8").split("\n")
 
 
+def runQuery2(select):
+    dbfns = ["pihole-FTL.db", "/etc/pihole/pihole-FTL.db"]
+    dbfn = None
+    for fn in dbfns:
+        if os.path.isfile(fn):
+            dbfn = fn
+            break
+
+    if dbfn is None:
+        print("Could not find database")
+        return None
+
+    if not os.access(dbfn, os.R_OK):
+        print(
+            "Database {} is not readable by current user; use runQuery to run via sudo".format(
+                dbfn
+            )
+        )
+        return None
+
+    conn = None
+    try:
+        conn = sqlite3.connect("file:{}?mode=ro".format(dbfn), uri=True)
+        cursor = conn.cursor()
+        cursor.execute(select)
+        results = [row[0] for row in cursor.fetchall()]
+        conn.close()
+        return results
+    except Exception as e:
+        print("Error when attempting to run query:\n" + str(e))
+        try:
+            if conn:
+                conn.close()
+        except Exception:
+            pass
+        return None
+
+
 def readDomains(verbose=False):
     start = time.time()
 
@@ -80,14 +119,14 @@ def readDomains(verbose=False):
     """
 
     select_hu = select.format(lookback, "")
-    domains_hu = runQuery(select_hu)
+    domains_hu = runQuery2(select_hu)
     if domains_hu is None:
         if verbose:
             print(f"readDomains took {elapsed():.3f}s")
         return []
 
     select_nonhu = select.format(lookback, "not ")
-    domains_nonhu = runQuery(select_nonhu)
+    domains_nonhu = runQuery2(select_nonhu)
     if domains_nonhu is None:
         if verbose:
             print(f"readDomains took {elapsed():.3f}s")
@@ -113,7 +152,7 @@ def readDomains2(verbose=False):
             status in (1, 4, 5, 6, 7, 8, 9, 10, 11, 15, 16, 18) and
             timestamp >= {mintimestamp}
     """
-    domains = runQuery(select)
+    domains = runQuery2(select)
     if verbose:
         delta = time.time() - start
         print(f"readDomains took {delta:.3f}s")
@@ -125,6 +164,9 @@ def filterDomains(domains, whitelist, blacklist, verbose=False):
 
     whitelistset = set(whitelist)
     blacklistset = set(blacklist)
+
+    if domains is None:
+        domains = []
 
     result = list(
         filter(
