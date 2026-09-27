@@ -134,7 +134,7 @@ def count_keyword_occurrences(pattern: str, text: str) -> int:
 blacklist_contentkeywords = None
 
 
-def count_all_keyword_occurrences(text: str) -> dict[str, int]:
+def count_all_keyword_occurrences(text: str, debug: bool = False) -> dict[str, int]:
     text = unicodedata.normalize("NFC", text)
     global blacklist_contentkeywords
     if blacklist_contentkeywords is None:
@@ -142,10 +142,15 @@ def count_all_keyword_occurrences(text: str) -> dict[str, int]:
             blacklist_contentkeywords = [
                 unicodedata.normalize("NFC", line.strip()) for line in f if line.strip()
             ]
-    return {
+    occurrences: dict[str, int] = {
         keyword: count_keyword_occurrences(keyword, text)
         for keyword in blacklist_contentkeywords
     }
+
+    if debug:
+        print(format_occurrences(occurrences))
+
+    return occurrences
 
 
 def format_occurrences(occurrences: dict[str, int]) -> str:
@@ -158,12 +163,14 @@ def format_occurrences(occurrences: dict[str, int]) -> str:
     return "\n".join(lines)
 
 
-def inspect_content(url: str) -> tuple[DomainType, str]:
+def inspect_content(url: str, debug: bool = False) -> tuple[DomainType, str]:
     dt = DomainType.UNKNOWN
     msg = ""
     start = time.time()
     try:
-        occurrences = count_all_keyword_occurrences(get_page_content(url))
+        occurrences = count_all_keyword_occurrences(
+            get_page_content(url, debug=debug), debug=debug
+        )
         s = sum(c for c in occurrences.values())
         dt = DomainType.BLACK if s >= KEYWORD_COUNT_THRESHOLD else DomainType.WHITE
         msg = f"Found {s} keywords"
